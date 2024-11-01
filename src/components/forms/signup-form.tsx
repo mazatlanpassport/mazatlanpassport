@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import DatePicker from 'react-datepicker'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,12 +23,15 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { format, getYear, getMonth } from 'date-fns'
 import { EyeClosedIcon, EyeOpenIcon } from '@radix-ui/react-icons'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signup } from '@/lib/actions/auth'
 import { type SignupInputs, signupSchema } from '@/lib/validations/auth/signup'
+import { cn, range } from '@/lib/utils'
 import { GENRE } from '@/config/app'
+import 'react-datepicker/dist/react-datepicker.css'
 // import { convertToSubcurrency } from '@/lib/utils'
 // import {
 //   PaymentElement as StripePaymentElement,
@@ -90,7 +94,7 @@ export default function SignupForm () {
       password: '',
       confirmPassword: '',
       genreISO: '',
-      age: undefined,
+      birthdate: format(new Date(), 'dd/MM/yyyy'),
       terms: false
     }
   })
@@ -109,6 +113,44 @@ export default function SignupForm () {
       form.reset()
       router.push(`/signup/verify-email/${response.data!.id}`)
     })
+  }
+
+  const currentYear = getYear(new Date())
+  const years = range(currentYear - 100, currentYear)
+  const months = {
+    en: [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ],
+    es: [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre'
+    ]
+  }
+
+  const createDateDMY = (dateDMY: string) => {
+    const dateValues = dateDMY.split('/')
+    return new Date(`${dateValues[1]}/${dateValues[0]}/${dateValues[2]}`)
   }
 
   return (
@@ -167,15 +209,78 @@ export default function SignupForm () {
         />
         <FormField
           control={form.control}
-          name='age'
+          name='birthdate'
           render={({ field }) => (
             <FormItem>
               <FormLabel>Fecha de nacimiento</FormLabel>
               <FormControl>
-                <Input
-                  type='date'
+                <DatePicker
                   {...field}
-                  value={field.value ? field.value.toString() : ''}
+                  dateFormat='dd/MM/yyyy'
+                  placeholderText='dd/mm/aaaa'
+                  selected={createDateDMY(field.value)}
+                  onSelect={(date) => { if (date) field.onChange(format(date, 'dd/MM/yyyy')) }}
+                  className='w-full outline-offset-0 f-body-2 outline-2 text-inherit ring-shadow border rounded-lg bg-input p-2.5 sm:p-3 cursor-pointer select-none'
+                  wrapperClassName='w-full'
+                  customInput={(
+                    <div>
+                      {field.value}
+                    </div>
+                  )}
+                  renderCustomHeader={({
+                    date,
+                    changeYear,
+                    changeMonth,
+                    decreaseMonth,
+                    increaseMonth,
+                    prevMonthButtonDisabled,
+                    nextMonthButtonDisabled
+                  }) => (
+                    <div className='flex justify-center gap-x-1 my-2.5'>
+                      <div
+                        onClick={() => { if (!prevMonthButtonDisabled) decreaseMonth() }}
+                        className={cn(
+                          'py-1 px-2 border border-muted-foreground rounded-md',
+                          !prevMonthButtonDisabled ? 'cursor-pointer' : 'bg-muted'
+                        )}
+                      >
+                        {'<'}
+                      </div>
+                      <select
+                        className='bg-input px-1 border border-muted-foreground rounded-md'
+                        value={getYear(date)}
+                        onChange={({ target: { value } }) => changeYear(Number(value))}
+                      >
+                        {years.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        className='bg-input px-1 border border-muted-foreground rounded-md'
+                        value={months.es[getMonth(date)]}
+                        onChange={({ target: { value } }) => changeMonth(months.es.indexOf(value))}
+                      >
+                        {months.es.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div
+                        onClick={() => { if (!nextMonthButtonDisabled) increaseMonth() }}
+                        className={cn(
+                          'py-1 px-2 border border-muted-foreground rounded-md',
+                          !nextMonthButtonDisabled ? 'cursor-pointer' : 'bg-muted'
+                        )}
+                      >
+                        {'>'}
+                      </div>
+                    </div>
+                  )}
                 />
               </FormControl>
               <FormMessage />

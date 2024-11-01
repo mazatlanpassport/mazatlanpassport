@@ -16,10 +16,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { verifyEmail } from '@/lib/actions/auth'
 import { type VerifyCodeInputs, verifyCodeSchema } from '@/lib/validations/verify-code'
+import type { UUIDInputs } from '@/lib/validations/uuid'
 
 export default function VerifyEmailForm () {
   const router = useRouter()
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams<UUIDInputs>()
   const [isTransition, startTransition] = useTransition()
 
   const form = useForm<VerifyCodeInputs>({
@@ -42,7 +43,7 @@ export default function VerifyEmailForm () {
 
       toast.success('Verificación exitoso!')
       form.reset()
-      router.push(`/users/${id}`)
+      router.push('/profile')
     })
   }
 
